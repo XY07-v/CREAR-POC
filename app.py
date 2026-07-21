@@ -87,7 +87,7 @@ def submit():
         }
         solicitudes_col.insert_one(documento)
 
-        # 5. Formatear texto sin codificar
+        # 5. Formatear texto sin codificar (para Web Share API)
         texto_raw = (
             f"*SOLICITUD #{consecutivo}*\n"
             f"*Funcionario:* {funcionario}\n"
@@ -101,13 +101,16 @@ def submit():
             f"*Foto Placa:* {url_foto}"
         )
 
-        # Codificar texto para evitar problemas con '#', espacios y saltos de línea
+        # Codificar texto para enlace de respaldo
         mensaje_codificado = urllib.parse.quote(texto_raw)
-
         numero_telefono = "573132691744"
         url_whatsapp = f"https://wa.me/{numero_telefono}?text={mensaje_codificado}"
 
-        return jsonify({"success": True, "whatsapp_url": url_whatsapp})
+        return jsonify({
+            "success": True,
+            "texto_raw": texto_raw,
+            "whatsapp_url": url_whatsapp
+        })
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
