@@ -4,69 +4,364 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitud de Campo</title>
+    <!-- Fuentes e Iconos -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; max-width: 500px; }
-        .form-group { margin-bottom: 15px; }
-        label { font-weight: bold; display: block; margin-bottom: 5px; }
-        input, select, button { width: 100%; padding: 10px; box-sizing: border-box; }
-        button { background-color: #25D366; color: white; border: none; font-weight: bold; cursor: pointer; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-        #status { font-size: 0.9em; color: #555; margin-top: 5px; }
+        :root {
+            --primary-color: #075e54;
+            --primary-light: #128c7e;
+            --accent-color: #25d366;
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .header p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        form {
+            padding: 24px 20px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        input[type="text"], select, input[type="file"] {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background-color: #fafafa;
+            transition: all 0.2s ease;
+            color: var(--text-main);
+        }
+
+        select {
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .select-wrapper::after {
+            content: '\f107';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 14px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(18, 140, 126, 0.15);
+        }
+
+        /* Estilo para la carga de archivos */
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            background-color: #fafafa;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .file-upload-label:hover {
+            border-color: var(--primary-light);
+            background-color: #f0fdf4;
+            color: var(--primary-light);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Botón de Ubicación */
+        .btn-location {
+            width: 100%;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-location:hover {
+            background-color: #bae6fd;
+        }
+
+        .status-box {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-box.active {
+            color: #15803d;
+            font-weight: 500;
+        }
+
+        /* Botón de Enviar */
+        .btn-submit {
+            width: 100%;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+            transition: all 0.2s ease;
+            margin-top: 24px;
+        }
+
+        .btn-submit:hover {
+            background-color: #22c55e;
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:disabled {
+            background-color: #d1d5db;
+            color: #9ca3af;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Selector de destino */
+        .destination-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .destination-btn {
+            flex: 1;
+            padding: 8px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #f9fafb;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .destination-btn.active {
+            border-color: var(--primary-light);
+            background: #e6f4f1;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
 
-    <h2>Formulario de Solicitud</h2>
-
-    <form id="reporteForm">
-        <div class="form-group">
-            <label for="bmb">BMB:</label>
-            <input type="text" id="bmb" required>
+    <div class="container">
+        <div class="header">
+            <h2><i class="fa-solid fa-clipboard-check"></i> Registro de Campo</h2>
+            <p>Complete la información para generar la solicitud</p>
         </div>
 
-        <div class="form-group">
-            <label for="poc">Nombre del POC (según Base TA):</label>
-            <input type="text" id="poc" required>
-        </div>
+        <form id="reporteForm">
+            <div class="form-group">
+                <label for="bmb">BMB</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-hashtag"></i>
+                    <input type="text" id="bmb" placeholder="Ej: 12939" required>
+                </div>
+            </div>
 
-        <div class="form-group">
-            <label for="funcionario">Funcionario:</label>
-            <input type="text" id="funcionario" required>
-        </div>
+            <div class="form-group">
+                <label for="poc">Nombre del POC (según Base TA)</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-store"></i>
+                    <input type="text" id="poc" placeholder="Ej: Tienda Juanita" required>
+                </div>
+            </div>
 
-        <div class="form-group">
-            <label for="motivo">Motivo de la consulta:</label>
-            <select id="motivo" required>
-                <option value="">Seleccione...</option>
-                <option value="Actualización">Actualización</option>
-                <option value="Creación de POC">Creación de POC</option>
-            </select>
-        </div>
+            <div class="form-group">
+                <label for="funcionario">Funcionario</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <input type="text" id="funcionario" placeholder="Nombre completo" required>
+                </div>
+            </div>
 
-        <div class="form-group">
-            <label for="placa">Foto de la Placa:</label>
-            <input type="file" id="placa" accept="image/*" capture="environment" required>
-        </div>
+            <div class="form-group">
+                <label for="motivo">Motivo de la consulta</label>
+                <div class="input-wrapper select-wrapper">
+                    <i class="fa-solid fa-list-check"></i>
+                    <select id="motivo" required>
+                        <option value="">Seleccione motivo...</option>
+                        <option value="Actualización">Actualización</option>
+                        <option value="Creación de POC">Creación de POC</option>
+                    </select>
+                </div>
+            </div>
 
-        <div class="form-group">
-            <button type="button" onclick="obtenerUbicacion()">1. Capturar Ubicación</button>
-            <div id="status">Ubicación no obtenida aún.</div>
-        </div>
+            <div class="form-group">
+                <label>Foto de la Placa</label>
+                <label for="placa" class="file-upload-label" id="fileLabel">
+                    <i class="fa-solid fa-camera"></i>
+                    <span id="fileText">Tomar o adjuntar foto</span>
+                </label>
+                <input type="file" id="placa" accept="image/*" capture="environment" required onchange="actualizarNombreArchivo(this)">
+            </div>
 
-        <button type="submit" id="btnEnviar" disabled>2. Enviar por WhatsApp</button>
-    </form>
+            <div class="form-group">
+                <label>Ubicación GPS</label>
+                <button type="button" class="btn-location" onclick="obtenerUbicacion()">
+                    <i class="fa-solid fa-location-crosshairs"></i> Capturar Ubicación
+                </button>
+                <div id="status" class="status-box">
+                    <i class="fa-solid fa-circle-info"></i> Ubicación no obtenida aún.
+                </div>
+            </div>
+
+            <!-- Opción para elegir cómo enviar -->
+            <div class="form-group">
+                <label>Enviar a:</label>
+                <div class="destination-group">
+                    <div class="destination-btn active" id="destDirect" onclick="seleccionarDestino('direct')">
+                        <i class="fa-solid fa-phone"></i> Número predefinido
+                    </div>
+                    <div class="destination-btn" id="destShare" onclick="seleccionarDestino('share')">
+                        <i class="fa-solid fa-users"></i> Elegir Grupo / Chat
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="btnEnviar" class="btn-submit" disabled>
+                <i class="fa-brands fa-whatsapp"></i> Enviar por WhatsApp
+            </button>
+        </form>
+    </div>
 
     <script>
         let datosUbicacion = { lat: '', lon: '', departamento: '', ciudad: '' };
+        let modoEnvio = 'direct'; // 'direct' o 'share'
+
+        function seleccionarDestino(tipo) {
+            modoEnvio = tipo;
+            document.getElementById('destDirect').classList.toggle('active', tipo === 'direct');
+            document.getElementById('destShare').classList.toggle('active', tipo === 'share');
+        }
+
+        function actualizarNombreArchivo(input) {
+            const fileLabel = document.getElementById('fileText');
+            if (input.files && input.files[0]) {
+                fileLabel.innerText = "Foto seleccionada: " + input.files[0].name;
+            }
+        }
 
         function obtenerUbicacion() {
             const status = document.getElementById('status');
             if (!navigator.geolocation) {
-                status.innerText = "La geolocalización no es soportada por su navegador.";
+                status.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Geolocalización no soportada.`;
                 return;
             }
 
-            status.innerText = "Obteniendo ubicación...";
+            status.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Obteniendo coordenadas...`;
 
             navigator.geolocation.getCurrentPosition(
                 async (position) => {
@@ -80,15 +375,17 @@
                         datosUbicacion.ciudad = data.address.city || data.address.town || data.address.village || 'No detectada';
                         datosUbicacion.departamento = data.address.state || 'No detectado';
 
-                        status.innerText = `Ubicación lista: ${datosUbicacion.ciudad}, ${datosUbicacion.departamento}`;
+                        status.className = "status-box active";
+                        status.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${datosUbicacion.ciudad}, ${datosUbicacion.departamento}`;
                         document.getElementById('btnEnviar').disabled = false;
                     } catch (error) {
-                        status.innerText = `Coordenadas obtenidas (${datosUbicacion.lat}, ${datosUbicacion.lon})`;
+                        status.className = "status-box active";
+                        status.innerHTML = `<i class="fa-solid fa-circle-check"></i> Coordenadas capturadas (${datosUbicacion.lat.toFixed(4)}, ${datosUbicacion.lon.toFixed(4)})`;
                         document.getElementById('btnEnviar').disabled = false;
                     }
                 },
                 (error) => {
-                    status.innerText = "Error al obtener ubicación. Asegúrese de otorgar permisos GPS.";
+                    status.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Active el GPS y otorgue permisos.`;
                 }
             );
         }
@@ -97,7 +394,7 @@
             e.preventDefault();
 
             const btnEnviar = document.getElementById('btnEnviar');
-            btnEnviar.innerText = "Procesando...";
+            btnEnviar.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Procesando...`;
             btnEnviar.disabled = true;
 
             const formData = new FormData();
@@ -120,15 +417,30 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    window.location.href = result.whatsapp_url;
+                    if (modoEnvio === 'share' && navigator.share) {
+                        // Si elige 'Elegir Grupo / Chat' y el navegador lo soporta
+                        try {
+                            const urlObj = new URL(result.whatsapp_url);
+                            const textoMensaje = decodeURIComponent(urlObj.searchParams.get('text'));
+                            
+                            await navigator.share({
+                                text: textoMensaje
+                            });
+                        } catch (err) {
+                            // Si cancela la ventana de compartir, redirige normal
+                            window.location.href = result.whatsapp_url;
+                        }
+                    } else {
+                        // Envío directo al número predefinido (3132691744)
+                        window.location.href = result.whatsapp_url;
+                    }
                 } else {
-                    alert("Error al procesar el formulario: " + result.error);
-                    btnEnviar.innerText = "2. Enviar por WhatsApp";
-                    btnEnviar.disabled = false;
+                    alert("Error al procesar: " + result.error);
                 }
             } catch (err) {
                 alert("Error de conexión al enviar el formulario.");
-                btnEnviar.innerText = "2. Enviar por WhatsApp";
+            } finally {
+                btnEnviar.innerHTML = `<i class="fa-brands fa-whatsapp"></i> Enviar por WhatsApp`;
                 btnEnviar.disabled = false;
             }
         });
