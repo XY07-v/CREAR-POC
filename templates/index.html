@@ -120,7 +120,6 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    // Abrir WhatsApp con el mensaje estructurado
                     window.location.href = result.whatsapp_url;
                 } else {
                     alert("Error al procesar el formulario: " + result.error);
