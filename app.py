@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from pymongo import MongoClient, ReturnDocument
 from werkzeug.utils import secure_filename
 import os
+import urllib.parse
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "nestle_bi_fixed_2026")
@@ -17,7 +18,7 @@ db = client['NestleDB']
 solicitudes_col = db['solicitudes']
 counters_col = db['counters']
 
-# Configurar la carpeta "imagenes" dentro de "static"
+# Configuración de carpeta para guardar imágenes en static/imagenes
 UPLOAD_FOLDER = os.path.join('static', 'imagenes')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -42,10 +43,10 @@ def index():
 @app.route('/submit', methods=['POST'])
 def submit():
     try:
-        # 1. Obtener consecutivo
+        # 1. Obtener el consecutivo único
         consecutivo = obtener_siguiente_consecutivo()
 
-        # 2. Procesar imagen y guardar en la carpeta "imagenes"
+        # 2. Guardar la foto en la carpeta static/imagenes
         foto = request.files.get('placa')
         url_foto = "No adjuntada"
         filename_guardado = None
@@ -54,15 +55,14 @@ def submit():
             ext = os.path.splitext(foto.filename)[1]
             filename_guardado = secure_filename(f"placa_solicitud_{consecutivo}{ext}")
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename_guardado)
-            
-            # Asegura que la carpeta exista antes de guardar
+
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
             foto.save(filepath)
 
             base_url = request.host_url.rstrip('/')
             url_foto = f"{base_url}/static/imagenes/{filename_guardado}"
 
-        # 3. Leer campos del formulario
+        # 3. Leer campos enviados desde el formulario
         bmb = request.form.get('bmb', '')
         poc = request.form.get('poc', '')
         funcionario = request.form.get('funcionario', '')
@@ -72,7 +72,7 @@ def submit():
         lat = request.form.get('lat', '')
         lon = request.form.get('lon', '')
 
-        # 4. Guardar en MongoDB
+        # 4. Registrar en MongoDB
         documento = {
             "consecutivo": consecutivo,
             "funcionario": funcionario,
@@ -87,22 +87,25 @@ def submit():
         }
         solicitudes_col.insert_one(documento)
 
-        # 5. Formatear mensaje para WhatsApp
-        mensaje = (
-            f"*SOLICITUD #{consecutivo}*%0A"
-            f"*Funcionario:* {funcionario}%0A"
-            f"*BMB:* {bmb}%0A"
-            f"*POC (Base TA):* {poc}%0A"
-            f"*Motivo:* {motivo}%0A"
-            f"*Departamento:* {departamento}%0A"
-            f"*Ciudad:* {ciudad}%0A"
-            f"*Coordenadas:* {lat}, {lon}%0A"
-            f"*Ubicación Maps:* https://maps.google.com/?q={lat},{lon}%0A"
+        # 5. Formatear texto sin codificar
+        texto_raw = (
+            f"*SOLICITUD #{consecutivo}*\n"
+            f"*Funcionario:* {funcionario}\n"
+            f"*BMB:* {bmb}\n"
+            f"*POC (Base TA):* {poc}\n"
+            f"*Motivo:* {motivo}\n"
+            f"*Departamento:* {departamento}\n"
+            f"*Ciudad:* {ciudad}\n"
+            f"*Coordenadas:* {lat}, {lon}\n"
+            f"*Ubicación Maps:* https://maps.google.com/?q={lat},{lon}\n"
             f"*Foto Placa:* {url_foto}"
         )
 
+        # Codificar texto para evitar problemas con '#', espacios y saltos de línea
+        mensaje_codificado = urllib.parse.quote(texto_raw)
+
         numero_telefono = "573132691744"
-        url_whatsapp = f"https://wa.me/{numero_telefono}?text={mensaje}"
+        url_whatsapp = f"https://wa.me/{numero_telefono}?text={mensaje_codificado}"
 
         return jsonify({"success": True, "whatsapp_url": url_whatsapp})
 
