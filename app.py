@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, url_for
+from flask import Flask, render_template, request, jsonify
 from pymongo import MongoClient, ReturnDocument
 from werkzeug.utils import secure_filename
 import os
@@ -7,21 +7,24 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "nestle_bi_fixed_2026")
 
 # --- CONEXIÓN MONGODB ---
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://<usuario>:<password>@cluster0.dtureen.mongodb.net/?appName=Cluster0")
+MONGO_URI = os.environ.get(
+    "MONGO_URI",
+    "mongodb+srv://ANDRES_VANEGAS:CF32fUhOhrj70dY5@cluster0.dtureen.mongodb.net/?appName=Cluster0"
+)
 client = MongoClient(MONGO_URI)
 db = client['NestleDB']
 
 solicitudes_col = db['solicitudes']
 counters_col = db['counters']
 
-# Carpeta local para guardar imágenes temporalmente
-UPLOAD_FOLDER = os.path.join('static', 'uploads')
+# Configurar la carpeta "imagenes" dentro de "static"
+UPLOAD_FOLDER = os.path.join('static', 'imagenes')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 def obtener_siguiente_consecutivo():
-    """Genera un consecutivo único e incremental en MongoDB."""
+    """Genera un consecutivo secuencial único en MongoDB sin duplicados."""
     resultado = counters_col.find_one_and_update(
         {'_id': 'solicitud_id'},
         {'$inc': {'seq': 1}},
@@ -39,10 +42,10 @@ def index():
 @app.route('/submit', methods=['POST'])
 def submit():
     try:
-        # 1. Obtener número consecutivo
+        # 1. Obtener consecutivo
         consecutivo = obtener_siguiente_consecutivo()
 
-        # 2. Guardar la foto
+        # 2. Procesar imagen y guardar en la carpeta "imagenes"
         foto = request.files.get('placa')
         url_foto = "No adjuntada"
         filename_guardado = None
@@ -51,11 +54,13 @@ def submit():
             ext = os.path.splitext(foto.filename)[1]
             filename_guardado = secure_filename(f"placa_solicitud_{consecutivo}{ext}")
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename_guardado)
+            
+            # Asegura que la carpeta exista antes de guardar
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
             foto.save(filepath)
 
-            # Detectar la URL base pública (Render o localhost)
             base_url = request.host_url.rstrip('/')
-            url_foto = f"{base_url}/static/uploads/{filename_guardado}"
+            url_foto = f"{base_url}/static/imagenes/{filename_guardado}"
 
         # 3. Leer campos del formulario
         bmb = request.form.get('bmb', '')
@@ -82,7 +87,7 @@ def submit():
         }
         solicitudes_col.insert_one(documento)
 
-        # 5. Generar texto para WhatsApp
+        # 5. Formatear mensaje para WhatsApp
         mensaje = (
             f"*SOLICITUD #{consecutivo}*%0A"
             f"*Funcionario:* {funcionario}%0A"
