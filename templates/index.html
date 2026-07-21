@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Campo</title>
+    <title>Solicitud de Campo</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; max-width: 500px; }
         .form-group { margin-bottom: 15px; }
         label { font-weight: bold; display: block; margin-bottom: 5px; }
         input, select, button { width: 100%; padding: 10px; box-sizing: border-box; }
         button { background-color: #25D366; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
         #status { font-size: 0.9em; color: #555; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <h2>Formulario de Reporte</h2>
+    <h2>Formulario de Solicitud</h2>
 
     <form id="reporteForm">
         <div class="form-group">
@@ -37,16 +38,13 @@
             <label for="motivo">Motivo de la consulta:</label>
             <select id="motivo" required>
                 <option value="">Seleccione...</option>
-                <option value="Inspección de rutina">Inspección de rutina</option>
-                <option value="Mantenimiento">Mantenimiento</option>
-                <option value="Verificación de datos">Verificación de datos</option>
-                <option value="Otro">Otro</option>
+                <option value="Actualización">Actualización</option>
+                <option value="Creación de POC">Creación de POC</option>
             </select>
         </div>
 
         <div class="form-group">
             <label for="placa">Foto de la Placa:</label>
-            <!-- Permite tomar foto directamente en dispositivos móviles -->
             <input type="file" id="placa" accept="image/*" capture="environment" required>
         </div>
 
@@ -59,12 +57,7 @@
     </form>
 
     <script>
-        let datosUbicacion = {
-            lat: '',
-            lon: '',
-            departamento: '',
-            ciudad: ''
-        };
+        let datosUbicacion = { lat: '', lon: '', departamento: '', ciudad: '' };
 
         function obtenerUbicacion() {
             const status = document.getElementById('status');
@@ -73,14 +66,13 @@
                 return;
             }
 
-            status.innerText = "Solicitando permisos y obteniendo ubicación...";
+            status.innerText = "Obteniendo ubicación...";
 
             navigator.geolocation.getCurrentPosition(
                 async (position) => {
                     datosUbicacion.lat = position.coords.latitude;
                     datosUbicacion.lon = position.coords.longitude;
 
-                    // Geocodificación inversa usando OpenStreetMap (Nominatim API)
                     try {
                         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${datosUbicacion.lat}&lon=${datosUbicacion.lon}&format=json`);
                         const data = await response.json();
@@ -88,43 +80,58 @@
                         datosUbicacion.ciudad = data.address.city || data.address.town || data.address.village || 'No detectada';
                         datosUbicacion.departamento = data.address.state || 'No detectado';
 
-                        status.innerText = `Ubicación lista: ${datosUbicacion.ciudad}, ${datosUbicacion.departamento} (${datosUbicacion.lat}, ${datosUbicacion.lon})`;
+                        status.innerText = `Ubicación lista: ${datosUbicacion.ciudad}, ${datosUbicacion.departamento}`;
                         document.getElementById('btnEnviar').disabled = false;
                     } catch (error) {
-                        status.innerText = `Coordenadas obtenidas (${datosUbicacion.lat}, ${datosUbicacion.lon}), pero no se pudo obtener ciudad/departamento.`;
+                        status.innerText = `Coordenadas obtenidas (${datosUbicacion.lat}, ${datosUbicacion.lon})`;
                         document.getElementById('btnEnviar').disabled = false;
                     }
                 },
                 (error) => {
-                    status.innerText = "Error al obtener la ubicación: Permiso denegado o no disponible.";
+                    status.innerText = "Error al obtener ubicación. Asegúrese de otorgar permisos GPS.";
                 }
             );
         }
 
-        document.getElementById('reporteForm').addEventListener('submit', function(e) {
+        document.getElementById('reporteForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const bmb = document.getElementById('bmb').value;
-            const poc = document.getElementById('poc').value;
-            const funcionario = document.getElementById('funcionario').value;
-            const motivo = document.getElementById('motivo').value;
+            const btnEnviar = document.getElementById('btnEnviar');
+            btnEnviar.innerText = "Procesando...";
+            btnEnviar.disabled = true;
 
-            // Formatear el mensaje para WhatsApp
-            const mensaje = `*NUEVO REPORTE DE CAMPO*%0A` +
-                `*Funcionario:* ${funcionario}%0A` +
-                `*BMB:* ${bmb}%0A` +
-                `*POC (Base TA):* ${poc}%0A` +
-                `*Motivo:* ${motivo}%0A` +
-                `*Departamento:* ${datosUbicacion.departamento}%0A` +
-                `*Ciudad:* ${datosUbicacion.ciudad}%0A` +
-                `*Coordenadas:* ${datosUbicacion.lat}, ${datosUbicacion.lon}%0A` +
-                `*Ubicación Maps:* https://maps.google.com/?q=${datosUbicacion.lat},${datosUbicacion.lon}`;
+            const formData = new FormData();
+            formData.append('bmb', document.getElementById('bmb').value);
+            formData.append('poc', document.getElementById('poc').value);
+            formData.append('funcionario', document.getElementById('funcionario').value);
+            formData.append('motivo', document.getElementById('motivo').value);
+            formData.append('placa', document.getElementById('placa').files[0]);
+            formData.append('lat', datosUbicacion.lat);
+            formData.append('lon', datosUbicacion.lon);
+            formData.append('departamento', datosUbicacion.departamento);
+            formData.append('ciudad', datosUbicacion.ciudad);
 
-            const numeroTelefono = "573132691744"; // Código de país para Colombia (57) + número
-            const urlWhatsApp = `https://wa.me/${numeroTelefono}?text=${mensaje}`;
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            // Abrir WhatsApp con el mensaje prellenado
-            window.open(urlWhatsApp, '_blank');
+                const result = await response.json();
+
+                if (result.success) {
+                    // Abrir WhatsApp con el mensaje estructurado
+                    window.location.href = result.whatsapp_url;
+                } else {
+                    alert("Error al procesar el formulario: " + result.error);
+                    btnEnviar.innerText = "2. Enviar por WhatsApp";
+                    btnEnviar.disabled = false;
+                }
+            } catch (err) {
+                alert("Error de conexión al enviar el formulario.");
+                btnEnviar.innerText = "2. Enviar por WhatsApp";
+                btnEnviar.disabled = false;
+            }
         });
     </script>
 </body>
