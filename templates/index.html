@@ -98,7 +98,7 @@
             font-size: 1rem;
         }
 
-        input[type="text"], select, input[type="file"] {
+        input[type="text"], select {
             width: 100%;
             padding: 12px 14px 12px 42px;
             border: 1px solid var(--border-color);
@@ -226,32 +226,6 @@
             cursor: not-allowed;
             transform: none;
         }
-
-        /* Selector de destino */
-        .destination-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .destination-btn {
-            flex: 1;
-            padding: 8px;
-            font-size: 0.8rem;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background: #f9fafb;
-            cursor: pointer;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .destination-btn.active {
-            border-color: var(--primary-light);
-            background: #e6f4f1;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
     </style>
 </head>
 <body>
@@ -318,34 +292,14 @@
                 </div>
             </div>
 
-            <!-- Opción para elegir cómo enviar -->
-            <div class="form-group">
-                <label>Enviar a:</label>
-                <div class="destination-group">
-                    <div class="destination-btn active" id="destDirect" onclick="seleccionarDestino('direct')">
-                        <i class="fa-solid fa-phone"></i> Número predefinido
-                    </div>
-                    <div class="destination-btn" id="destShare" onclick="seleccionarDestino('share')">
-                        <i class="fa-solid fa-users"></i> Elegir Grupo / Chat
-                    </div>
-                </div>
-            </div>
-
             <button type="submit" id="btnEnviar" class="btn-submit" disabled>
-                <i class="fa-brands fa-whatsapp"></i> Enviar por WhatsApp
+                <i class="fa-brands fa-whatsapp"></i> Compartir / Enviar por WhatsApp
             </button>
         </form>
     </div>
 
     <script>
         let datosUbicacion = { lat: '', lon: '', departamento: '', ciudad: '' };
-        let modoEnvio = 'direct'; // 'direct' o 'share'
-
-        function seleccionarDestino(tipo) {
-            modoEnvio = tipo;
-            document.getElementById('destDirect').classList.toggle('active', tipo === 'direct');
-            document.getElementById('destShare').classList.toggle('active', tipo === 'share');
-        }
 
         function actualizarNombreArchivo(input) {
             const fileLabel = document.getElementById('fileText');
@@ -417,21 +371,20 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    if (modoEnvio === 'share' && navigator.share) {
-                        // Si elige 'Elegir Grupo / Chat' y el navegador lo soporta
+                    // Usar Web Share API para permitir elegir Grupo o Chat Individual
+                    if (navigator.share) {
                         try {
-                            const urlObj = new URL(result.whatsapp_url);
-                            const textoMensaje = decodeURIComponent(urlObj.searchParams.get('text'));
-                            
                             await navigator.share({
-                                text: textoMensaje
+                                title: 'Solicitud de Campo',
+                                text: result.texto_raw
                             });
-                        } catch (err) {
-                            // Si cancela la ventana de compartir, redirige normal
+                        } catch (shareError) {
+                            // En caso de cancelar la ventana de compartir, redirigir por el enlace por defecto
+                            console.log("Compartir cancelado o fallo, abriendo enlace directo.");
                             window.location.href = result.whatsapp_url;
                         }
                     } else {
-                        // Envío directo al número predefinido (3132691744)
+                        // Respaldo para navegadores de escritorio sin menú de compartir
                         window.location.href = result.whatsapp_url;
                     }
                 } else {
@@ -440,7 +393,7 @@
             } catch (err) {
                 alert("Error de conexión al enviar el formulario.");
             } finally {
-                btnEnviar.innerHTML = `<i class="fa-brands fa-whatsapp"></i> Enviar por WhatsApp`;
+                btnEnviar.innerHTML = `<i class="fa-brands fa-whatsapp"></i> Compartir / Enviar por WhatsApp`;
                 btnEnviar.disabled = false;
             }
         });
